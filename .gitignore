@@ -1,0 +1,15 @@
+# uv lock file
+uv.lock
+
+# Virtual environment directory
+.venv/
+venv/
+env/
+
+# Python compiled files
+*.pyc
+__pycache__/
+
+# Editor/IDE specific files
+.vscode/
+.idea/

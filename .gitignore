@@ -13,3 +13,7 @@ __pycache__/
 # Editor/IDE specific files
 .vscode/
 .idea/
+
+# environment variable files
+.env
+.env.*.local

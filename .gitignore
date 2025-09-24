@@ -17,3 +17,10 @@ __pycache__/
 # environment variable files
 .env
 .env.*.local
+
+
+# ruff cache
+.ruff_cache/
+
+# backup
+backup/

@@ -3,9 +3,13 @@ import io
 import google.genai.types as types
 import matplotlib.pyplot as plt
 import pandas as pd
-from google.adk.agents import LlmAgent
+from google.adk.agents import LlmAgent, RunConfig
+from google.adk.agents.callback_context import CallbackContext
 from google.adk.code_executors import BuiltInCodeExecutor
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
 from google.adk.tools import FunctionTool, ToolContext
+import google.genai.types as types
 
 
 async def analyze_csv(tool_context: ToolContext) -> dict:
@@ -156,6 +160,29 @@ async def execute_custom_code(python_code: str, tool_context: ToolContext) -> di
         return {"status": "error", "message": f"程式碼執行失敗: {str(e)}"}
 
 
+def save_uploaded_file_as_artifact(context: CallbackContext):
+    """Saves the first uploaded file in the context as an artifact."""
+    if context.user_content and context.user_content.parts:
+        for part in context.user_content.parts:
+            if part.data and part.mime_type:
+                # Assuming the first data part is the uploaded file
+                # You might want more sophisticated logic to identify specific files
+                filename = (
+                    "uploaded_file.txt"  # Or extract from part metadata if available
+                )
+                artifact = types.Part.from_data(
+                    data=part.data, mime_type=part.mime_type
+                )
+                try:
+                    version = context.save_artifact(
+                        filename=filename, artifact=artifact
+                    )
+                    print(f"Artifact '{filename}' saved with version {version}")
+                except Exception as e:
+                    print(f"Failed to save artifact: {e}")
+                break  # Save only the first found file for this example
+
+
 AGENT_INSTRUCTION = """
 你是一個專業的數據視覺化助手，擅長分析 CSV 資料並生成各種圖表。
 
@@ -192,4 +219,16 @@ root_agent = LlmAgent(
         FunctionTool(func=generate_chart),
         FunctionTool(func=execute_custom_code),
     ],
+    before_model_callback=save_uploaded_file_as_artifact,
+)
+
+
+session_service = InMemorySessionService()
+
+config = RunConfig(save_input_blobs_as_artifacts=True)
+runner = Runner(
+    agent=root_agent,  # The agent we want to run
+    app_name="chart_generation_agent",  # Associates runs with our app
+    session_service=session_service,  # Uses our session manager
+    # Callback to save uploads
 )
